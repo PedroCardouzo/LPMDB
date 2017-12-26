@@ -44,11 +44,16 @@ class BTreeNode():
 
     def search(self, cf, tv, out):
         if type(self) is BTreeNode:
+            
             t_out = [x for x in self.elements if cf(x.key, tv)]
             ind = len(t_out)
             if self.leaf:
                 out += t_out
             else:
+                
+                if cf == eq:
+                    ind = bisect([x.key for x in self.elements], tv)
+                
                 doGreater = cf == gt or cf == ge or ind >= self.nKeys
 
                 # in final implementation it may not be from i=0 to ind-1 because filtered elements may not start at i = 0
@@ -58,7 +63,7 @@ class BTreeNode():
                 for x in t_out:
                     x.child.search(cf, tv, out)
                     out.append(x)
-                t_out = []
+                del t_out
                 if doGreater:
                     self.greater.search(cf, tv, out)
                 else:
@@ -177,8 +182,9 @@ def makeNodeElement(key, value):
 
 bt = BTree(2)
 
-keys = [3.2, 3.6, 2.6, 4.5, 3.3, 4.9, 4.6, 3.5, 1.4, 4.2, 4.7, 4.8, 5.0, 5.0, 5.0, 5.0, 0.7, 0.9]
-elements = [makeNodeElement(x, 100) for x in keys]
+keys = [3.2, 3.6, 2.6, 4.5, 3.3, 4.9, 4.6, 3.5, 1.4, 4.2, 4.7, 4.8, 5.0, 5.0, 5.0, 5.0, 0.7, 0.9, 4.9]
+gen = (x for x in range(100))
+elements = [makeNodeElement(x, next(gen)) for x in keys]
 
 
 for element in elements:
@@ -187,14 +193,14 @@ for element in elements:
 print('insertion over:')
 
 
-# bt._print()
+bt._print()
 
-cf = le
-tv = 3.5
+cf = eq
+tv = 5
 
 output = bt.search(cf, tv)
 
-output = [x.key for x in output]
+output = [(x.key, x.value) for x in output]
 keys = [x for x in keys if cf(x, tv)]
 
 print(output)
@@ -202,5 +208,5 @@ print(keys)
 
 # checks if lists are equal
 for el in output:
-    keys.remove(el)
+    keys.remove(el[0])
 print(keys == [])
