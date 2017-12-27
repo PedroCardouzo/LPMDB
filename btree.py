@@ -150,6 +150,15 @@ class BTree():
     def _print(self):
         self.root._print(0)
 
+    @classmethod
+    def load(cls, filepath):
+        with open(filepath, 'rb') as file:
+            return picklerick.loads(file.read())
+
+    def save(self, filepath):
+        with open(filepath, 'wb') as file:
+            return file.write(picklerick.dumps(self))
+
     def search(self, cf, tv):
         out = []
         self.root.search(cf, tv, out)
