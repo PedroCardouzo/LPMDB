@@ -189,33 +189,34 @@ class BTree():
 def makeNodeElement(key, value):
     return BTreeNodeElement(key, value, [])
 
-bt = BTree(2)
+# @ test
+# bt = BTree(2)
 
-keys = [3.2, 3.6, 2.6, 4.5, 3.3, 4.9, 4.6, 3.5, 1.4, 4.2, 4.7, 4.8, 5.0, 5.0, 5.0, 5.0, 0.7, 0.9, 4.9]
-gen = (x for x in range(100))
-elements = [makeNodeElement(x, next(gen)) for x in keys]
-
-
-for element in elements:
-    bt.insert(element)
-
-print('insertion over:')
+# keys = [3.2, 3.6, 2.6, 4.5, 3.3, 4.9, 4.6, 3.5, 1.4, 4.2, 4.7, 4.8, 5.0, 5.0, 5.0, 5.0, 0.7, 0.9, 4.9]
+# gen = (x for x in range(100))
+# elements = [makeNodeElement(x, next(gen)) for x in keys]
 
 
-bt._print()
+# for element in elements:
+#     bt.insert(element)
 
-cf = eq
-tv = 5
+# print('insertion over:')
 
-output = bt.search(cf, tv)
 
-output = [(x.key, x.value) for x in output]
-keys = [x for x in keys if cf(x, tv)]
+# bt._print()
 
-print(output)
-print(keys)
+# cf = eq
+# tv = 5
 
-# checks if lists are equal
-for el in output:
-    keys.remove(el[0])
-print(keys == [])
+# output = bt.search(cf, tv)
+
+# output = [(x.key, x.value) for x in output]
+# keys = [x for x in keys if cf(x, tv)]
+
+# print(output)
+# print(keys)
+
+# # checks if lists are equal
+# for el in output:
+#     keys.remove(el[0])
+# print(keys == [])

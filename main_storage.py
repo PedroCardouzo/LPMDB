@@ -1,6 +1,7 @@
 import pickle as picklerick
 from struct import pack, unpack
 from bisect import bisect, insort
+from collections import namedtuple
 
 id_index = namedtuple('id_index', 'lpmdbID, address')
 
@@ -26,55 +27,95 @@ def storeElementSize(file, element):
 def readNext(file):
     """recieves a file pointer, reads first 4 bytes from a file and converts it into a little endian integer then it
     takes that integer's value (let's suppose x = 102) and reads the next x = 102 bytes from the file. It then
-    unpickles it and returns the object in its original form"""
-    size = getElementSize(file)
+    unpickles it and returns the object in its original form. If EOF was reached, it returns None"""
+    try:
+        size = getElementSize(file)
+    except:
+        return None
     byte_array = file.read(size)
     return picklerick.loads(byte_array)
 
-# getMovieByID: String Integer -> ANY
-def getMovieByID(filepath, id):
-    """given a filepath and an id, loads the movie with that id form the file that filepath points to
-    if the movie isn't in the database returns -1"""
+# readMovieByPos: String Integer ->  ANY
+def readMovieByPos(filepath, position):
+    """recieves a string (filepath) and a position (integer) opens the file pointed by filepath and seeks the position 'position'"""
+    with open(filepath, 'rb') as file:
+        file.seek(position)
+        return readNext(file)
+
+# getMoviePositionByID: String Integer -> Integer or None
+def getMoviePositionByID(filepath, id):
+    """given a filepath and an id, loads the movie with that id form the file that filepath points to.
+    If the movie isn't in the database returns None"""
     index_filepath = filepath.split('.')[0] + '.lpmdb'
     with open(index_filepath, 'rb') as index_file:
-        index_table = picklerick.loads(file.read())
-        pos = bisect(index_table, (id,None))-1
+        index_table = picklerick.loads(index_file.read())
+        # -1 is used because after sorting from first argument, 
+        # if found any equal it will sort by the second argument
+        pos = bisect(index_table, (id,-1)) 
+        value = index_table[pos]
         del index_table
-    with open(filepath, 'rb') as file:
-        fseek(pos)
-        value = readNext(file)
         if value.lpmdbID == id:
-            return value
-        else
+            return value.address
+        else:
             return None
 
-# index_position: String Integer Integer -> None
-def index_position(filepath, key, value):
-    """recieves a string and and 2 integers. It splits the string at the first '.' and appends '.lpmdb' there.
-    Then it opens a file with that name, which is a indexing file. It inserts the key,value pair at the correct position
+# index_position: (String || FILE*) Integer Integer [Boolean]-> None
+def index_position(filepath, key, value, keep_open=False):
+    """recieves a string and and 2 integers. Then it opens a file with that name, which is a indexing file. It inserts the key,value pair at the correct position
      so that it is still sorted by lpmdbID"""
-    filepath = filepath.split('.')[0] + '.lpmdb'
     table_value = id_index(key,value)
-    with open(filepath, 'wb+') as file:
+
+    if type(filepath) is str:
+        try:
+            file = open(filepath, 'rb+')
+        except FileNotFoundError:
+            open(filepath, 'wb').close()
+            file = open(filepath, 'rb+')
+    else:
+        file = filepath
+
+    try:
         index_table = picklerick.loads(file.read())
         insort(index_table, table_value)
-        bytes_array = picklerick.dumps(index_table)
-        del index_table
-        file.seek(0)
-        file.write(bytes_array)
+    except EOFError:
+        index_table = [table_value]
+    
+    bytes_array = picklerick.dumps(index_table)
+    del index_table
+    file.seek(0)
+    file.write(bytes_array)
+
+    if not keep_open:
+        file.close()
 
 
-# writeAppend: String ANY -> None
-def writeAppend(filepath, any_object):
-    """Recieves a string that is the path to the file and an arbitrary object. It then opens the file as append binary,
+# writeAppend: (String || FILE*) Movie [Boolean FILE*] -> None
+def writeAppend(filepath, movie_object, keep_open=False):
+    """Recieves a string that is the path to the file (or the file itself) and an arbitrary object. It then opens the file as append binary,
     pickles the object to transform it into a bytes array. Then it uses file.tell() to get the position where the
-    new object will be inserted and stores it in a variable 'x'. It proceeds to store the length of the bytes
+    new object will be inserted and stores it in a variable 'pos'. It proceeds to store the length of the bytes
     array as a little endian integer and then writes the bytes array to the file. After that it saves the
-    value of 'x' in a indexing file with the same filepath, but ending in '.lpmdb' using lpmdbID as keys."""
-    lpmdbID = any_object['lpmdbID']
+    value of 'pos' in a indexing file with the same filepath, but ending in '.lpmdb' using lpmdbID as keys."""
+    lpmdbID = int(movie_object['lpmdbID']) # @change remove int() cast
+    if type(filepath) is str:
+        file = open(filepath, 'ab')
+    else:
+        file = filepath
+        filepath = filepath.name
+
+    index_filepath = filepath.split('.')[0] + '.lpmdb'
+
+    byte_array = picklerick.dumps(movie_object)
+    pos = file.tell()
+    storeElementSize(file, byte_array)
+    file.write(byte_array)
+    
+    index_position(index_filepath, lpmdbID, pos)
+
+    if not keep_open:
+        file.close()
+
+def dumpMultipleMovies(filepath, list_of_movies):
     with open(filepath, 'ab') as file:
-        byte_array = picklerick.dumps(any_object)
-        x = file.tell()
-        storeElementSize(file, byte_array)
-        file.write(byte_array)
-    index_position(filepath, lpmdbID, x)
+        for movie in list_of_movies:
+            writeAppend(file, movie, keep_open = True)
