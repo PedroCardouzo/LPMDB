@@ -4,4 +4,4 @@ import btree as BTree
 
 
 def test():
-	reversed_files.make_reversed_file('db.bin', 'genre_rf.bin', lambda m: str.lwr(m['Genre']).split(', '))
+	reversed_files.make_reversed_file('db.bin', 'genre_rf.bin', lambda m: str.lower(m['Genre']).split(', '))
