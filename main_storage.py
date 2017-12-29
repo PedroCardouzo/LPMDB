@@ -101,7 +101,7 @@ def writeAppend(filepath, movie_object, keep_open=False):
     new object will be inserted and stores it in a variable 'pos'. It proceeds to store the length of the bytes
     array as a little endian integer and then writes the bytes array to the file. After that it saves the
     value of 'pos' in a indexing file with the same filepath, but ending in '.lpmdb' using lpmdbID as keys."""
-    lpmdbID = int(movie_object['lpmdbID']) # @change remove int() cast
+    lpmdbID = movie_object.lpmdbID
     if type(filepath) is str:
         file = open(filepath, 'ab')
     else:

@@ -12,7 +12,8 @@ class PTrieNode:
         # 26 pointers to None for a-z, plus 10 for 0-9 plus : and ' '
         self.ptrs = [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
                      None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                     None, None, None, None, None, None]
+                     None, None, None, None, None, None, None, None, None, None, None, None, None]
+
 
     def next(self, char):
         self.hasNext = True
@@ -34,6 +35,14 @@ class PTrieNode:
             if x is not None:
                 x._print(level+1)
 
+    def extract(self):
+        out = []
+        if self.key is not None:
+            out.append((self.key, self.value))
+        for node in self.ptrs:
+            if node is not None:
+                out += node.extract()
+        return out
 
 class PatriciaTrie:
 
@@ -56,30 +65,35 @@ class PatriciaTrie:
                 else:
                     string2 = node.key
                     value2 = node.value
-                    node.key, node.value = None, 0
-                    j = 0
-                    for c1, c2 in zip(string, string2):
-                        if c1 == c2:
-                            j += 1
-                        else:
-                            break
-                    if j == len(string2):
-                        string, string2 = string2, string
-                        value, value2 = value2, value
-                    if j == len(string):  # in case one string is the prefix of the other
-                        for a in range(i,j):
-                            node = node.next(string[a])
-
-                        self._insert(string, value, node, j-1)
-                        node = node.next(string2[j])
-                        self._insert(string2, value2, node, j)
+                    if string == string2:
+                        print('register with key=' + string2 + ' already exists')
                     else:
-                        for a in range(i,j):
-                            node = node.next(string[a])
+                        node.key, node.value = None, 0
+                        j = 0
+                        for c1, c2 in zip(string, string2):
+                            if c1 == c2:
+                                j += 1
+                            else:
+                                break
+                        if j == len(string2):
+                            string, string2 = string2, string
+                            value, value2 = value2, value
+                        if j == len(string):  # in case one string is the prefix of the other
+                            for a in range(i, j):
+                                node = node.next(string[a])
+                            self._insert(string, value, node, j-1)
 
-                        self._insert(string, value, node.next(string[j]), j)
-                        self._insert(string2, value2, node.next(string2[j]), j)
-                    return
+                            node = node.next(string2[j])
+                            self._insert(string2, value2, node, j)
+                        else:
+                            for a in range(i, j):
+                                node = node.next(string[a])
+
+                            self._insert(string, value, node.next(string[j]), j)
+                            self._insert(string2, value2, node.next(string2[j]), j)
+                        return
+        node.set(string, value)  # got to the end of the string, so it belongs to this node
+        return
 
     def insert(self, movie, position=None, db_filepath='db.bin', λ=lambda x: x.title):
         position = getMoviePositionByID(db_filepath, movie.lpmdbID) if position is None else position
@@ -94,7 +108,7 @@ class PatriciaTrie:
         with open(filepath, 'rb') as file:
             return picklerick.loads(file.read())
 
-    def createPatriciaTrie(self, db_filepath, pt_filepath='title_pt.bin', λ=lambda x: str.lower(x['Title'])):
+    def createPatriciaTrie(self, db_filepath, pt_filepath='title_ppt.bin', λ=lambda mv: str.lower(mv.title)):
         with open(db_filepath, 'rb') as file:
             position = file.tell()
             movie = readNext(file)
@@ -103,21 +117,75 @@ class PatriciaTrie:
                 position = file.tell()
                 movie = readNext(file)
 
-        # self.save(pt_filepath) # @ decomment
+        self.save(pt_filepath) # @ uncomment
 
     def print(self):
         self.root._print(0)
 
     def searchExactMatch(self, string):
         node = self.root
-        letter = iter(string)
-        while node is not None and node.hasNext:
-            try:
-                node = node.ptrs[char_to_index(next(letter))]
-            except StopIteration:
-                return None
+        for letter in string:
+            if node.hasNext:
+                node = node.next(letter)
+            else:
+                break
 
-        return node.key if node is not None else None
+        return node.key,node.value if node is not None else None
+
+    def prefixSearch(self, string):
+        node = self.root
+        for letter in string:
+            if node.hasNext:
+                node = node.next(letter)
+            else:
+                break
+        return [node]
+
+    def _infixSearch(self, infix, _i, node):
+        out = []
+        if node is None:
+            return []
+        else:
+            if _i == len(infix):
+                return [node]
+            elif node.hasNext:
+                if node.key == "caacbo":
+                    print(node.key)
+                    print(_i)
+                index = char_to_index(infix[_i])
+                index_str0 = char_to_index(infix[0])
+
+                for i, _node in enumerate(node.ptrs):
+                    if _node is not None:
+                        if i == index:
+                            out += self._infixSearch(infix, _i+1, _node)
+                        elif i == index_str0:
+                            out += self._infixSearch(infix, 1, _node)
+                        else:
+                            out += self._infixSearch(infix, 0, _node)
+                return out
+            elif infix in node.key:
+                return [node]
+            else:
+                return []
+
+
+    def infixSearch(self, infix):
+        return self._infixSearch(infix, 0, self.root)
+
+    def genericSearch(self, string, search_function):
+        output = []
+        node_list = search_function(string)
+        for node in node_list:
+            output += node.extract()
+        return output
+
+
+    def testFill(self, lista):
+        x = 0
+        for s in lista:
+            ptrie._insert(s, x)
+            x += 10
 
 
 def char_to_index(char):
@@ -126,25 +194,42 @@ def char_to_index(char):
     elif char >= '0' and char <= '9':
         index = ord(char) - ord('0') + 26
     elif char == ':':
+        index = -6
+    elif char == '.':
+        index = -5
+    elif char == ',':
+        index = -4
+    elif char == "'":
+        index = -3
+    elif char == ' ':  # char == ' '
         index = -2
-    else:  # char == ' '
+    else:
         index = -1
+        print('unindentified char: ' + char)
     return index
+
+
+# @ test
 
 ptrie = PatriciaTrie()
 # ptrie.createPatriciaTrie('db.bin')
-ptrie.print()
 x = 0
-lista = [('aaa', x), ('aaba', x), ('chac', x), ('dhad', x), ('lord of the rings', x), ('lord of the rings the comeback', x)]
-for s,v in lista:
-    ptrie._insert(s, v+x)
-    x += 10
-ptrie.print()
-
-# print(rt.ptrs[char_to_index('h')].ptrs[(char_to_index('a'))].ptrs)
+# lista = ['caca', 'macarroni', 'acbolado', 'acb', 'acd', 'caacbo', 'ccaa']
+# lista = ['ar', 'args']
+ptrie.testFill(lista)
+# ptrie.print()
+# print(ptrie.root.ptrs[char_to_index('a')].ptrs[(char_to_index('g'))].ptrs[(char_to_index('o'))].key)
 # print(rt.ptrs[char_to_index('a')].ptrs[char_to_index('a')].ptrs[char_to_index('b')].key)#.ptrs[char_to_index('a')].key)
-print(ptrie.searchExactMatch('aa'))
-ptrie.save('ptrie_test.bin')
-pt = PatriciaTrie.read('ptrie_test.bin')
-print('printing pt')
-pt.print()
+# ptrie.print()
+# print(ptrie.searchExactMatch('agon'))
+# print(ptrie.prefixSearch('ab')[0].ptrs[char_to_index('b')].key)
+# l = ptrie.infixSearch('cb')
+# print(l)
+# print(l[0].ptrs[1].key)
+# print(l[0].ptrs[3].key)
+# print(l[0].key)
+# print(l[0].ptrs[char_to_index('o')].key)
+# print(l[1].key)
+
+a = ptrie.genericSearch('wi', ptrie.infixSearch)
+print(len(a))

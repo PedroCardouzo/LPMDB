@@ -78,7 +78,7 @@ def new_reversed_file(database_path, field):
     """given a path to the database file and a field to access on a movie that must be a string, creates a new reversed 
     file that contains every movie in the database the movie position indexed by its field to the reverse file"""
     filepath = field + '_rf.bin'
-    make_reversed_file(database_path, filepath, lambda m: str.lower(m[field]).split(', '))
+    make_reversed_file(database_path, filepath, lambda m: str.lower(m.__dict__[field]).split(', '))
 
 
 # inc_reversed_file: String Movie String -> None
@@ -86,4 +86,4 @@ def new_reversed_file(database_path, field):
 def inc_reversed_file(database_path, movie, field):
     """adds the movie indexed by its field to the corresponding reversed file. It it doesn't exists it creates the first one"""
     filepath = field + '_rf.bin'
-    add_to_reversed_file(database_path, movie, filepath, lambda m: str.lower(m[field]).split(', '))
+    add_to_reversed_file(database_path, movie, filepath, lambda m: str.lower(m.__dict__[field]).split(', '))
