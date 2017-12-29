@@ -23,9 +23,9 @@ def make_reversed_file(filepath, output_filename, λ):
             position = file.tell()
             movie = ms.readNext(file) # reads next iteraction movie
 
-
     print(reversed_file)
-    save_rf(output_filename, reversed_file)
+    save(output_filename, reversed_file)
+
 
 # make_reversed_file: String Movie String (Movie -> list) -> None
 # side effects: takes a binary reversed file with the name of reversed_file_path and
@@ -45,20 +45,24 @@ def add_to_reversed_file(filepath, movie, reversed_file_path, λ):
             reversed_file[x].append(position)
         else:
             reversed_file[x] = [position]
-    save_rf(reversed_file_path, reversed_file)
-# save_rf: String Dict -> None
+    save(reversed_file_path, reversed_file)
+
+
+# save: String Dict -> None
 # side effects: creates a binary reversed file with the contents of 'reversed_file'
-def save_rf(output_filename, reversed_file):
+def save(output_filename, reversed_file):
     """given an output filename and a reversed file, creates a binary pickled reversed_file"""
     file = open(output_filename, 'wb')
     file.write(picklerick.dumps(reversed_file))
     file.close()
 
-# read_rf: String -> Dict
-def read_rf(filepath):
+
+# read: String -> Dict
+def read(filepath):
     """recieves a path to the file, opens it and returns the reversed file dict inside of it"""
     with open(filepath, 'rb') as file:
         return picklerick.loads(file.read())
+
 
 # getPositionByProperty: String String -> Integer
 def getPositionByProperty(filepath, property):
@@ -66,6 +70,7 @@ def getPositionByProperty(filepath, property):
     that is inside the file and returns the property field"""
     with open(filepath, 'rb') as file:
         return picklerick.loads(file.read())[property]
+
 
 # new_reversed_file_multiple_elements: String String -> None
 # side effect: adds all the movies in the database to the reverse file using the provided field

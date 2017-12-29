@@ -5,6 +5,7 @@ from collections import namedtuple
 
 id_index = namedtuple('id_index', 'lpmdbID, address')
 
+
 # getElementSize: FILE* -> Integer
 def getElementSize(file):
     """recieves a file pointer and reads from it the next 4 bytes that should be a little endian integer
@@ -23,6 +24,7 @@ def storeElementSize(file, element):
     element_size = pack('<i', len(element))
     return file.write(element_size)
 
+
 # readNext: FILE* -> ANY
 def readNext(file):
     """recieves a file pointer, reads first 4 bytes from a file and converts it into a little endian integer then it
@@ -35,12 +37,14 @@ def readNext(file):
     byte_array = file.read(size)
     return picklerick.loads(byte_array)
 
+
 # readMovieByPos: String Integer ->  ANY
 def readMovieByPos(filepath, position):
     """recieves a string (filepath) and a position (integer) opens the file pointed by filepath and seeks the position 'position'"""
     with open(filepath, 'rb') as file:
         file.seek(position)
         return readNext(file)
+
 
 # getMoviePositionByID: String Integer -> Integer or None
 def getMoviePositionByID(filepath, id):
@@ -58,6 +62,7 @@ def getMoviePositionByID(filepath, id):
             return value.address
         else:
             return None
+
 
 # index_position: (String || FILE*) Integer Integer [Boolean]-> None
 def index_position(filepath, key, value, keep_open=False):
@@ -114,6 +119,7 @@ def writeAppend(filepath, movie_object, keep_open=False):
 
     if not keep_open:
         file.close()
+
 
 def dumpMultipleMovies(filepath, list_of_movies):
     with open(filepath, 'ab') as file:

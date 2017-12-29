@@ -4,7 +4,7 @@ from collections import namedtuple
 
 BTreeNodeElement = namedtuple("BTreeNodeElement", "key, value, child")
 
-class BTreeNode():
+class BTreeNode:
     def __init__(self, elements, greater, leaf=False):
         self.elements = elements
         self.nKeys = len(elements)
@@ -70,7 +70,7 @@ class BTreeNode():
                     self.elements[ind].child.search(cf, tv, out)
 
 
-class BTree():
+class BTree:
     def __init__(self, t):
         self.root = []
         self.min = t-1
@@ -147,11 +147,11 @@ class BTree():
                 else:
                     overflow = True
 
-    def _print(self):
+    def print(self):
         self.root._print(0)
 
-    @classmethod
-    def load(cls, filepath):
+    @staticmethod
+    def load(filepath):
         with open(filepath, 'rb') as file:
             return picklerick.loads(file.read())
 
@@ -170,7 +170,7 @@ class BTree():
 #                                 Value(2.8, None)
 #                              ])
 #                   ),
-#                   Value(3.5, BTreeNode([
+#                   Value(3.5, BTreeNode([next(letter)
 #                                 Value(2.9, None),
 #                                 Value(3.4, None)
 #                              ])
@@ -203,7 +203,7 @@ def makeNodeElement(key, value):
 # print('insertion over:')
 
 
-# bt._print()
+# bt.print()
 
 # cf = eq
 # tv = 5
