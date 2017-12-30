@@ -1,6 +1,7 @@
 # -*- coding: <UTF-8> -*-
 import pickle as picklerick
-from main_storage import getMoviePositionByID, readNext
+from .main_storage import getMoviePositionByID, readNext
+from ._globals import base, index_base
 
 
 class PTrieNode:
@@ -95,29 +96,35 @@ class PatriciaTrie:
         node.set(string, value)  # got to the end of the string, so it belongs to this node
         return
 
-    def insert(self, movie, position=None, db_filepath='db.bin', λ=lambda x: x.title):
+    def insert(self, movie, position=None, db_filepath='lpmdb.bin', λ=lambda x: x.title):
         position = getMoviePositionByID(db_filepath, movie.lpmdbID) if position is None else position
         self._insert(λ(movie), position)
 
     def save(self, filepath):
-        with open(filepath, 'wb') as file:
+        with open(index_base+filepath, 'wb') as file:
             file.write(picklerick.dumps(self))
 
     @staticmethod
     def read(filepath):
-        with open(filepath, 'rb') as file:
+        with open(index_base+filepath, 'rb') as file:
             return picklerick.loads(file.read())
 
-    def createPatriciaTrie(self, db_filepath, pt_filepath='title_ppt.bin', λ=lambda mv: str.lower(mv.title)):
-        with open(db_filepath, 'rb') as file:
+    @staticmethod
+    def create_patricia_trie(db_filename, pt_filename, λ=lambda mv: str.lower(mv.title)):
+        pt = PatriciaTrie()
+        pt._createPatriciaTrie(db_filename, pt_filename, λ)
+        return pt
+
+    def _createPatriciaTrie(self, db_filename, pt_filename, λ):
+        with open(base+db_filename, 'rb') as file:
             position = file.tell()
             movie = readNext(file)
             while movie is not None:
-                self.insert(movie, position, db_filepath, λ)
+                self.insert(movie, position, db_filename, λ)
                 position = file.tell()
                 movie = readNext(file)
 
-        self.save(pt_filepath) # @ uncomment
+        self.save(pt_filename)
 
     def print(self):
         self.root._print(0)
@@ -211,12 +218,12 @@ def char_to_index(char):
 
 # @ test
 
-ptrie = PatriciaTrie()
+# ptrie = PatriciaTrie()
 # ptrie.createPatriciaTrie('db.bin')
-x = 0
+# x = 0
 # lista = ['caca', 'macarroni', 'acbolado', 'acb', 'acd', 'caacbo', 'ccaa']
 # lista = ['ar', 'args']
-ptrie.testFill(lista)
+# ptrie.testFill(lista)
 # ptrie.print()
 # print(ptrie.root.ptrs[char_to_index('a')].ptrs[(char_to_index('g'))].ptrs[(char_to_index('o'))].key)
 # print(rt.ptrs[char_to_index('a')].ptrs[char_to_index('a')].ptrs[char_to_index('b')].key)#.ptrs[char_to_index('a')].key)
@@ -231,5 +238,5 @@ ptrie.testFill(lista)
 # print(l[0].ptrs[char_to_index('o')].key)
 # print(l[1].key)
 
-a = ptrie.genericSearch('wi', ptrie.infixSearch)
-print(len(a))
+# a = ptrie.genericSearch('wi', ptrie.infixSearch)
+# print(len(a))

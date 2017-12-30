@@ -1,8 +1,11 @@
-from operator import *
+from operator import gt, ge, lt, le, eq
 from bisect import bisect
 from collections import namedtuple
+from ._globals import base, index_base
+
 
 BTreeNodeElement = namedtuple("BTreeNodeElement", "key, value, child")
+
 
 class BTreeNode:
     def __init__(self, elements, greater, leaf=False):
@@ -151,12 +154,12 @@ class BTree:
         self.root._print(0)
 
     @staticmethod
-    def load(filepath):
-        with open(filepath, 'rb') as file:
+    def load(filename):
+        with open(index_base + filename, 'rb') as file:
             return picklerick.loads(file.read())
 
-    def save(self, filepath):
-        with open(filepath, 'wb') as file:
+    def save(self, filename):
+        with open(index_base + filename, 'wb') as file:
             return file.write(picklerick.dumps(self))
 
     def search(self, cf, tv):

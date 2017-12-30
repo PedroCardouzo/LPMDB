@@ -2,6 +2,10 @@ import pickle as picklerick
 from struct import pack, unpack
 from bisect import bisect, insort
 from collections import namedtuple
+from .movie import Movie
+from ._globals import base
+import json
+
 
 id_index = namedtuple('id_index', 'lpmdbID, address')
 
@@ -41,7 +45,7 @@ def readNext(file):
 # readMovieByPos: String Integer ->  ANY
 def readMovieByPos(filepath, position):
     """recieves a string (filepath) and a position (integer) opens the file pointed by filepath and seeks the position 'position'"""
-    with open(filepath, 'rb') as file:
+    with open(base+filepath, 'rb') as file:
         file.seek(position)
         return readNext(file)
 
@@ -51,11 +55,11 @@ def getMoviePositionByID(filepath, id):
     """given a filepath and an id, loads the movie with that id form the file that filepath points to.
     If the movie isn't in the database returns None"""
     index_filepath = filepath.split('.')[0] + '.lpmdb'
-    with open(index_filepath, 'rb') as index_file:
+    with open(base+index_filepath, 'rb') as index_file:
         index_table = picklerick.loads(index_file.read())
-        # -1 is used because after sorting from first argument, 
+        # -1 is used because after sorting from first argument,
         # if found any equal it will sort by the second argument
-        pos = bisect(index_table, (id,-1)) 
+        pos = bisect(index_table, (id,-1))
         value = index_table[pos]
         del index_table
         if value.lpmdbID == id:
@@ -84,7 +88,7 @@ def index_position(filepath, key, value, keep_open=False):
         insort(index_table, table_value)
     except EOFError:
         index_table = [table_value]
-    
+
     bytes_array = picklerick.dumps(index_table)
     del index_table
     file.seek(0)
@@ -92,6 +96,15 @@ def index_position(filepath, key, value, keep_open=False):
 
     if not keep_open:
         file.close()
+
+
+def json_to_lpmdb_bin(source_file, dest_file):
+    with open(base + source_file, 'r') as file:
+        dict_list = json.loads(file.read())
+
+    with open(base + dest_file, 'ab') as file:
+        for d in dict_list:
+            writeAppend(file, Movie.load(d), keep_open=True)
 
 
 # writeAppend: (String || FILE*) Movie [Boolean FILE*] -> None
@@ -103,7 +116,7 @@ def writeAppend(filepath, movie_object, keep_open=False):
     value of 'pos' in a indexing file with the same filepath, but ending in '.lpmdb' using lpmdbID as keys."""
     lpmdbID = movie_object.lpmdbID
     if type(filepath) is str:
-        file = open(filepath, 'ab')
+        file = open(base+filepath, 'ab')
     else:
         file = filepath
         filepath = filepath.name
@@ -122,6 +135,6 @@ def writeAppend(filepath, movie_object, keep_open=False):
 
 
 def dumpMultipleMovies(filepath, list_of_movies):
-    with open(filepath, 'ab') as file:
+    with open(base+filepath, 'ab') as file:
         for movie in list_of_movies:
-            writeAppend(file, movie, keep_open = True)
+            writeAppend(file, movie, keep_open=True)
