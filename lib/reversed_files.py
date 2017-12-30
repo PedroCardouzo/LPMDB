@@ -11,7 +11,6 @@ def make_reversed_file(filename, output_filename, λ):
     given a movie returns a list, creates a inverted file using each element of the list as 
     a index to the movie position"""
     reversed_file = {}
-    flag = True
     with open(base+filename, "rb") as file:
         position = file.tell()
         movie = readNext(file)
@@ -24,7 +23,7 @@ def make_reversed_file(filename, output_filename, λ):
             position = file.tell()
             movie = readNext(file) # reads next iteraction movie
 
-    print(reversed_file)
+    # print(reversed_file) # @ debug
     save(output_filename, reversed_file)
 
 
@@ -58,10 +57,13 @@ def save(output_filename, reversed_file):
     file.close()
 
 
-# read: String -> Dict
-def read(filepath):
-    """recieves a path to the file, opens it and converts its contents to a reversed file dict then returns it"""
-    with open(index_base+filepath, 'rb') as file:
+# read: String [Boolean] -> Dict
+def read(filename, is_filename=False):
+    """recieves the property with the desired reverse file indexes, or if the is_filename flag is set to True,
+    recieves the filename. Opens the file and converts its contents to a reversed file dict then returns it"""
+    if not is_filename:
+        filename = filename + '_rf.bin'
+    with open(index_base+filename, 'rb') as file:
         return picklerick.loads(file.read())
 
 

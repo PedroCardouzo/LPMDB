@@ -1,8 +1,9 @@
+# -*- coding: <UTF-8> -*-
 from operator import gt, ge, lt, le, eq
 from bisect import bisect
 from collections import namedtuple
 from ._globals import base, index_base
-
+from .main_storage import readNext
 
 BTreeNodeElement = namedtuple("BTreeNodeElement", "key, value, child")
 
@@ -74,10 +75,10 @@ class BTreeNode:
 
 
 class BTree:
-    def __init__(self, t):
+    def __init__(self, min_degree):
         self.root = []
-        self.min = t-1
-        self.max = 2*t-1
+        self.min = min_degree-1
+        self.max = 2*min_degree-1
 
     # insert: BTree BTreeNodeElement -> None
     # recieves self and a BTreeNodeElement and inserts it into the BTree
@@ -154,6 +155,19 @@ class BTree:
         self.root._print(0)
 
     @staticmethod
+    def createBTree(min_degree, db_filename, λ=lambda m: m.averageRating):
+        bt = BTree(min_degree)
+        with open(base+db_filename, 'rb') as file:
+            position = file.tell()
+            movie = readNext(file)
+            while movie is not None:
+                bt.insert(makeNodeElement(λ(movie), position))
+                position = file.tell()
+                movie = readNext(file)
+
+        return bt
+
+    @staticmethod
     def load(filename):
         with open(index_base + filename, 'rb') as file:
             return picklerick.loads(file.read())
@@ -166,6 +180,12 @@ class BTree:
         out = []
         self.root.search(cf, tv, out)
         return out
+
+
+# makeNodeElement: Number ANY -> BTreeNodeElement
+def makeNodeElement(key, value):
+    return BTreeNodeElement(key, value, [])
+
 
 # pseudoBTree = BTreeNode([
 #                   Value(2.8, BTreeNode([
@@ -188,9 +208,6 @@ class BTree:
 # pseudoBTree.insertGreater(BTreeNode([Value(4.5, None), Value(4.9, None)]))
 # pseudoBTree.nKeys = 2
 
-# makeNodeElement: Number ANY -> BTreeNodeElement
-def makeNodeElement(key, value):
-    return BTreeNodeElement(key, value, [])
 
 # @ test
 # bt = BTree(2)
