@@ -1,4 +1,8 @@
 import json
+import locale
+
+
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 
 class Movie:
@@ -32,6 +36,31 @@ class Movie:
 
         else:
             self.__dict__ = dic
+
+    def __str__(self):
+        return ("Title: {}\n".format(self.title)
+                + "Released: {}\n".format(self.released)
+                + "Rated: {}\n".format(self.rated)
+                + "Genre: {}\n".format(self.genre)
+                + "Director: {}\n".format(self.director)
+                + "Writer: {}\n".format(self.writer)
+                + "Actors: {}\n".format(self.actors)
+                + "Plot: {}\n".format(self.plot)
+                + "Language: {}\n".format(self.language)
+                + "Country: {}\n".format(self.country)
+                + "Poster: {}\n".format(self.poster)
+                + "Type: {}\n".format(self.type)
+                + "Runtime: {} min\n".format(self.runtime)
+                + "Ratings: {}\n".format(self.print_ratings())
+                + "Average Rating: {}\n".format(self.averageRating)
+                + "Box Office: {}\n".format(locale.currency(self.boxOffice, grouping=True))
+                + "lpmdbID: {}\n".format(self.lpmdbID))
+
+    def print_ratings(self):
+        out = '[Internet Movie Database: {}, Rotten Tomatoes: {}, Metacritic: {}]'
+        self.rating.append(self.averageRating)# @ remove
+        out = out.format(*self.rating)
+        return out
 
     def setRuntime(self, string):
         self.runtime = int(string[:-4])
