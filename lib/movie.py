@@ -20,8 +20,8 @@ class Movie:
             self.plot = dic['Plot']
             self.language = dic['Language']
             self.country = dic['Country']
-            self.poster = dic['Poster']
             self.awards = dic['Awards']
+            self.poster = dic['Poster']
             self.type = dic['Type']
             self.runtime = 0
             self.ratings = []
@@ -40,7 +40,7 @@ class Movie:
 
     def __str__(self):
         return ("Title: {}\n".format(self.title)
-                + "Released: {}\n".format(self.released)
+                + "Year: {}\n".format(self.year)
                 + "Rated: {}\n".format(self.rated)
                 + "Genre: {}\n".format(self.genre)
                 + "Director: {}\n".format(self.director)
@@ -49,6 +49,7 @@ class Movie:
                 + "Plot: {}\n".format(self.plot)
                 + "Language: {}\n".format(self.language)
                 + "Country: {}\n".format(self.country)
+                + "Awards: {}\n".format(self.awards)
                 + "Poster: {}\n".format(self.poster)
                 + "Type: {}\n".format(self.type)
                 + "Runtime: {} min\n".format(self.runtime)

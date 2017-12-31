@@ -39,7 +39,7 @@ def add_to_reversed_file(filepath, movie, reversed_file_path, λ):
               "function to create one from multiple movies instead of one by one")
         reversed_file = {}
 
-    position = getMoviePositionByID(filepath, movie['lpmdbID'])
+    position = getMoviePositionByID(filepath, movie.__dict__['lpmdb_id'])
     for x in λ(movie):
         if x in reversed_file:
             reversed_file[x].append(position)

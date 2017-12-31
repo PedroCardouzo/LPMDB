@@ -156,7 +156,7 @@ class BTree:
         self.root._print(0)
 
     @staticmethod
-    def createBTree(db_filename, min_degree=2, λ=lambda m: m.averageRating):
+    def createBTree(db_filename, min_degree=2, λ=lambda m: m.average_rating):
         bt = BTree(min_degree)
         with open(base+db_filename, 'rb') as file:
             position = file.tell()
