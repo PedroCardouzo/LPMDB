@@ -8,11 +8,11 @@ def main():
 
 
     # ms.printDB('lpmdb.bin')
-    # ms.json_to_lpmdb_bin('sample.json', 'lpmdb.bin')
+    # ms.json_to_lpmdb_bin('lpmdb.json', 'lpmdb.bin')
     # mv = ms.readMovieByPos('lpmdb.bin', 11616)
     # print(mv.title)
 
-    parser.parse(':: from title filter the')
+    # parser.parse(':: from title filter the')
     while parser.parse(input()):  # returns false if input() returns "exit"
         pass
 

@@ -60,7 +60,14 @@ class Movie:
 
     def print_ratings(self):
         out = '[Internet Movie Database: {}, Rotten Tomatoes: {}, Metacritic: {}]'
+        length_r = len(self.ratings)
+
+        if length_r != 3:
+            x = 3 - length_r
+            self.ratings = self.ratings + x * [self.average_rating]
+
         out = out.format(*self.ratings)
+
         return out
 
     def setRuntime(self, string):
