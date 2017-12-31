@@ -43,7 +43,6 @@ class Parser:
                 else:
                     print('Invalid Syntax')
                     return True
-            print(self.names.keys())
             if command in self.names.keys():
                 print(self.quickprint(command, query))
                 return True

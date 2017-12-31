@@ -12,13 +12,15 @@ def http_get(query, type='i'):
 
 def download_data(input_filename, output_filename):
     doAgain = True
-
+    i = 0
+    x = 0
     with open(base+output_filename, 'a') as output_file:
         output_file.write('[')
 
         with open(base+input_filename, 'r') as input_file:
             for IDCode in input_file:
 
+                i += 1
                 print(str(i) + ': ' + IDCode)
                 # we have to do this multiple times because the website server is kinda slow
                 # so timeout occurs while asking for old more unpopular movies. Our guess is
@@ -30,7 +32,8 @@ def download_data(input_filename, output_filename):
                         doAgain = False
                         repeated = 0
                     except:
-                        time.sleep(4)
+                        time.sleep(4+x)
+                        x += 1 if x < 60 else -30
                         doAgain = True
 
                 doAgain = True

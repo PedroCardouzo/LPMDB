@@ -11,7 +11,7 @@ class Movie:
         if transform:
             # all fields are declared here, although they may change value
             self.title = dic['Title']
-            self.released = int(dic['Year'][4:])  # year # @ tochange
+            self.year = int(dic['Year'][:4])
             self.rated = dic['Rated']
             self.genre = dic['Genre']
             self.director = dic['Director']
@@ -21,18 +21,19 @@ class Movie:
             self.language = dic['Language']
             self.country = dic['Country']
             self.poster = dic['Poster']
+            self.awards = dic['Awards']
             self.type = dic['Type']
             self.runtime = 0
-            self.rating = []  # ratings  # @ tochange
-            self.averageRating = 0  # average_rating
-            self.boxOffice = 0  # box_office
-            self.lpmdbID = 0  # lpmdb_id
+            self.ratings = []
+            self.average_rating = 0
+            self.box_office = 0
+            self.lpmdb_id = 0
 
             self.setRuntime(dic['Runtime'])
-            self.setRating(dic['Ratings'])
-            self.setAverageRating(self.rating)
+            self.setRatings(dic['Ratings'])
+            self.setAverageRating()
             self.setBoxOffice(dic.get('BoxOffice', 'N/A'))
-            self.setlpmdbID(dic['lpmdbID'])
+            self.setlpmdbID(dic['imdbID'])
 
         else:
             self.__dict__ = dic
@@ -52,14 +53,13 @@ class Movie:
                 + "Type: {}\n".format(self.type)
                 + "Runtime: {} min\n".format(self.runtime)
                 + "Ratings: {}\n".format(self.print_ratings())
-                + "Average Rating: {}\n".format(self.averageRating)
-                + "Box Office: {}\n".format(locale.currency(self.boxOffice, grouping=True))
-                + "lpmdbID: {}\n".format(self.lpmdbID))
+                + "Average Rating: {}\n".format(self.average_rating)
+                + "Box Office: {}\n".format(locale.currency(self.box_office, grouping=True))
+                + "lpmdbID: {}\n".format(self.lpmdb_id))
 
     def print_ratings(self):
         out = '[Internet Movie Database: {}, Rotten Tomatoes: {}, Metacritic: {}]'
-        self.rating.append(self.averageRating)# @ remove
-        out = out.format(*self.rating)
+        out = out.format(*self.ratings)
         return out
 
     def setRuntime(self, string):
@@ -69,34 +69,34 @@ class Movie:
     def load(dic):
         return Movie(dic, False)
 
-    def setRating(self, list_of_ratings):
+    def setRatings(self, list_of_ratings):
 
         for rating in list_of_ratings:
             if rating['Source'] == 'Internet Movie Database':
                 imdb = rating['Value']
                 imdb = int(imdb[:-3].replace('.',''))
-                self.rating.append(imdb)
+                self.ratings.append(imdb)
             elif rating['Source'] == 'Rotten Tomatoes':
                 rotten = rating['Value']
                 rotten = int(rotten[:-1])
-                self.rating.append(rotten)
+                self.ratings.append(rotten)
             elif rating['Source'] == 'Metacritic':
                 metacritic = rating['Value']
                 metacritic = int(metacritic[:-4])
-                self.rating.append(metacritic)
+                self.ratings.append(metacritic)
 
-    def setAverageRating(self, ratings):
-        self.averageRating = sum(ratings)/len(ratings)
+    def setAverageRating(self):
+        self.average_rating = sum(self.ratings)/len(self.ratings)
 
     def setBoxOffice(self, string):
         number = string[1:].replace(',', '')
         try:
-            self.boxOffice = int(number)
+            self.box_office = int(number)
         except ValueError:  # sometimes the string is 'N/A'
-            self.boxOffice = 0
+            self.box_office = 0
 
     def setlpmdbID(self, string):
-        self.lpmdbID = int(string[2:])
+        self.lpmdb_id = int(string[2:])
 
     def dumps(self):
         return json.dumps(self.__dict__)
