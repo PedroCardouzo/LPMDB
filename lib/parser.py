@@ -298,9 +298,11 @@ help=("\n"
             print("hint: use 'make rf " + field + "' to create this reversed file")
             return None
         else:
+            matches = []
             for key in content.keys():
                 if desired_value in key:
-                    return content[key]
+                    matches += content[key]
+            return matches
 
     def parse_ptrie(self, query):
         field, _type, exp = [x for x in query.split(' ', 2) if x != '']
