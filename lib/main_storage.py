@@ -33,11 +33,14 @@ def storeElementSize(file, element):
 # side effect: prints the whole db
 def printDB(database_filename, f=None):
     with open(base+database_filename, 'rb') as file:
+        pos = file.tell()
         movie = readNext(file)
         while movie is not None:
-            print(movie.title)
+            print(movie.title + ' @ ' + str(pos))
             if f is not None:
                 print(f(movie))
+
+            pos = file.tell()
             movie = readNext(file)
 
 
@@ -71,7 +74,7 @@ def getMoviePositionByID(filepath, id):
         index_table = picklerick.loads(index_file.read())
         # -1 is used because after sorting from first argument,
         # if found any equal it will sort by the second argument
-        pos = bisect(index_table, (id,-1))
+        pos = bisect(index_table, (id, -1))
         value = index_table[pos]
         del index_table
         if value.lpmdbID == id:
@@ -82,8 +85,8 @@ def getMoviePositionByID(filepath, id):
 
 # index_position: (String || FILE*) Integer Integer [Boolean]-> None
 def index_position(filepath, key, value, keep_open=False):
-    """recieves a string and and 2 integers. Then it opens a file with that name, which is a indexing file. It inserts the key,value pair at the correct position
-     so that it is still sorted by lpmdbID"""
+    """recieves a string and and 2 integers. Then it opens a file with that name, which is a indexing file.
+    It inserts the key, value pair at the correct position so that it is still sorted by lpmdbID"""
     table_value = id_index(key,value)
 
     if type(filepath) is str:
@@ -126,7 +129,7 @@ def writeAppend(filepath, movie_object, keep_open=False):
     new object will be inserted and stores it in a variable 'pos'. It proceeds to store the length of the bytes
     array as a little endian integer and then writes the bytes array to the file. After that it saves the
     value of 'pos' in a indexing file with the same filepath, but ending in '.lpmdb' using lpmdbID as keys."""
-    lpmdbID = movie_object.lpmdbID
+    lpmdbID = movie_object.lpmdb_id
     if type(filepath) is str:
         file = open(base+filepath, 'ab')
     else:
@@ -137,6 +140,7 @@ def writeAppend(filepath, movie_object, keep_open=False):
 
     byte_array = picklerick.dumps(movie_object)
     pos = file.tell()
+    print('position @ ' + str(pos))
     storeElementSize(file, byte_array)
     file.write(byte_array)
     

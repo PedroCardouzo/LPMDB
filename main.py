@@ -4,14 +4,17 @@ import lib.main_storage as ms
 from lib.data_fetcher import download_data
 
 def main():
-    # parser = Parser()
+    parser = Parser()
 
-    # download_data('IDs.txt', '___new_lpmdb.json')  # will fetch data to a new file (this name as one _ more at the beggining)
 
-    # ms.printDB('lpmdb.bin', f=lambda x: x.released)
-    # parser.parse(':: from title filter the as dft')
-    # while parser.parse(input()):  # returns false if input() returns "exit"
-    #     pass
+    # ms.printDB('lpmdb.bin')
+    # ms.json_to_lpmdb_bin('lpmdb.json', 'lpmdb.bin')
+    # mv = ms.readMovieByPos('lpmdb.bin', 11616)
+    # print(mv.title)
+
+    # parser.parse(':: from title filter the')
+    while parser.parse(input()):  # returns false if input() returns "exit"
+        pass
 
     # parser.parse('make ptrie lpmdb.bin')
 

@@ -104,7 +104,7 @@ class PatriciaTrie:
         return
 
     def insert(self, movie, position=None, db_filepath='lpmdb.bin', λ=lambda x: x.title):
-        position = ms.getMoviePositionByID(db_filepath, movie.lpmdbID) if position is None else position
+        position = ms.getMoviePositionByID(db_filepath, movie.lpmdb_id) if position is None else position
         self._insert(λ(movie), position)
 
     def save(self, filepath, is_filepath=False):

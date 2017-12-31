@@ -9,37 +9,45 @@
 #         print(a.title)
 #         a = ms.readNext(file)
 
+
+# download_data('IDs.txt', '___new_lpmdb.json')  # will fetch data to a new file (this name as one _ more at the beggining)
+
 # pt = PatriciaTrie.create_patricia_trie('lpmdb.bin', 'title')
-    # pt.save('title')
-    # del pt
-    pt = PatriciaTrie.load('title')
-    # pt.print()
-    l = ["The Fifth Element",
-         "Liar Liar",
-         "The Lost World: Jurassic Park",
-         "Men in Black",
-         "The Fast and the Furious",
-         "Jurassic Park III",
-         "Ocean's Eleven",
-         "Shrek",
-         "8 Mile",
-         "The Bourne Identity",
-         "Harry Potter and the Chamber of Secrets",
-         "School of Rock",
-         "X-Men 2",
-         "Cheaper by the Dozen",
-         "Matrix Revolutions",
-         "Mystic River",
-         "The Bourne Supremacy",
-         "The Butterfly Effect",
-         "I, Robot",
-         "Kill Bill: Vol. 2"]
-    # for s in l:
-    #     print(pt.infixSearch(str.lower(s[1:-2]))[0].value)
-    # mv = ms.readMovieByPos('lpmdb.bin', 16896)
-    # print(mv.title)
-    mvs = PatriciaTrie.propagate_to_branches(pt.infixSearch('2'))
-    print(mvs)
+# pt.save('title')
+# del pt
+pt = PatriciaTrie.load('title')
+# pt.print()
+l = ["The Fifth Element",
+     "Liar Liar",
+     "The Lost World: Jurassic Park",
+     "Men in Black",
+     "The Fast and the Furious",
+     "Jurassic Park III",
+     "Ocean's Eleven",
+     "Shrek",
+     "8 Mile",
+     "The Bourne Identity",
+     "Harry Potter and the Chamber of Secrets",
+     "School of Rock",
+     "X-Men 2",
+     "Cheaper by the Dozen",
+     "Matrix Revolutions",
+     "Mystic River",
+     "The Bourne Supremacy",
+     "The Butterfly Effect",
+     "I, Robot",
+     "Kill Bill: Vol. 2"]
+# for s in l:
+#     print(pt.infixSearch(str.lower(s[1:-2]))[0].value)
+# mv = ms.readMovieByPos('lpmdb.bin', 16896)
+# print(mv.title)
+mvs = pt.infixSearch('the')
+aux = []
+# does wildcard searches: equivalent to "*the*supremacy*"
+for node in mvs:
+    aux += pt._infixSearch('supremacy', 0, node)
+
+print(PatriciaTrie.propagate_to_branches(aux))
 
 # reversed files tests:
 # delete all files and paste this in main ->
