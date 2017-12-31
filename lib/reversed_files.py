@@ -63,8 +63,13 @@ def read(filename, is_filename=False):
     recieves the filename. Opens the file and converts its contents to a reversed file dict then returns it"""
     if not is_filename:
         filename = filename + '_rf.bin'
-    with open(index_base+filename, 'rb') as file:
-        return picklerick.loads(file.read())
+
+    try:
+        with open(index_base+filename, 'rb') as file:
+            return picklerick.loads(file.read())
+    except FileNotFoundError:
+        print('file ' + filename + " doesn't exist")
+        return None
 
 
 # getPositionByProperty: String String -> Integer

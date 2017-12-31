@@ -29,6 +29,18 @@ def storeElementSize(file, element):
     return file.write(element_size)
 
 
+# printDB: String -> None
+# side effect: prints the whole db
+def printDB(database_filename, f=None):
+    with open(base+database_filename, 'rb') as file:
+        movie = readNext(file)
+        while movie is not None:
+            print(movie.title)
+            if f is not None:
+                print(f(movie))
+            movie = readNext(file)
+
+
 # readNext: FILE* -> ANY
 def readNext(file):
     """recieves a file pointer, reads first 4 bytes from a file and converts it into a little endian integer then it
@@ -138,3 +150,9 @@ def dumpMultipleMovies(filepath, list_of_movies):
     with open(base+filepath, 'ab') as file:
         for movie in list_of_movies:
             writeAppend(file, movie, keep_open=True)
+
+
+# populate: list -> list
+def populate(list_of_addresses, filename='lpmdb.bin'):
+    """given a list of addresses, it populates the list with the contents of the addresses"""
+    return [readMovieByPos(filename, x) for x in list_of_addresses]

@@ -7,7 +7,7 @@ class Movie:
         if transform:
             # all fields are declared here, although they may change value
             self.title = dic['Title']
-            self.released = dic['Year']
+            self.released = int(dic['Year'][4:])  # year # @ tochange
             self.rated = dic['Rated']
             self.genre = dic['Genre']
             self.director = dic['Director']
@@ -19,10 +19,10 @@ class Movie:
             self.poster = dic['Poster']
             self.type = dic['Type']
             self.runtime = 0
-            self.rating = []
-            self.averageRating = 0
-            self.boxOffice = 0
-            self.lpmdbID = 0
+            self.rating = []  # ratings  # @ tochange
+            self.averageRating = 0  # average_rating
+            self.boxOffice = 0  # box_office
+            self.lpmdbID = 0  # lpmdb_id
 
             self.setRuntime(dic['Runtime'])
             self.setRating(dic['Ratings'])
@@ -33,7 +33,7 @@ class Movie:
         else:
             self.__dict__ = dic
 
-    def setRuntime(self,string):
+    def setRuntime(self, string):
         self.runtime = int(string[:-4])
 
     @staticmethod
@@ -45,7 +45,7 @@ class Movie:
         for rating in list_of_ratings:
             if rating['Source'] == 'Internet Movie Database':
                 imdb = rating['Value']
-                imdb = int (imdb[:-3].replace('.',''))
+                imdb = int(imdb[:-3].replace('.',''))
                 self.rating.append(imdb)
             elif rating['Source'] == 'Rotten Tomatoes':
                 rotten = rating['Value']

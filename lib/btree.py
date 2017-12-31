@@ -4,6 +4,7 @@ from bisect import bisect
 from collections import namedtuple
 from ._globals import base, index_base
 from .main_storage import readNext
+import pickle as picklerick
 
 BTreeNodeElement = namedtuple("BTreeNodeElement", "key, value, child")
 
@@ -155,7 +156,7 @@ class BTree:
         self.root._print(0)
 
     @staticmethod
-    def createBTree(min_degree, db_filename, λ=lambda m: m.averageRating):
+    def createBTree(db_filename, min_degree=2, λ=lambda m: m.averageRating):
         bt = BTree(min_degree)
         with open(base+db_filename, 'rb') as file:
             position = file.tell()
@@ -168,11 +169,26 @@ class BTree:
         return bt
 
     @staticmethod
-    def load(filename):
-        with open(index_base + filename, 'rb') as file:
-            return picklerick.loads(file.read())
+    def load(filename, is_filename=False):
+        """given a filename, opens it as a btree. By default it interprets the filename as the default naming scheme
+        that means that filename is actually the name of the field that was indexed in this BTree and appends
+        '_btree.bin' at the end. if you send 'is_filename=True' it will interpret filename as the actual filename"""
+        if not is_filename:
+            filename = filename.lower() + '_btree.bin'
+        try:
+            with open(index_base + filename, 'rb') as file:
+                return picklerick.loads(file.read())
+        except FileNotFoundError:
+            print('file ' + filename + " doesn't exist")
+            return None
 
-    def save(self, filename):
+    def save(self, filename, is_filename=False):
+        """given a filename, saves the btree in it. By default it interprets the filename as the default naming scheme
+        that means that filename is actually the name of the field that was indexed in this BTree and appends
+        '_btree.bin' at the end. if you send 'is_filename=True' it will interpret filename as the actual filename"""
+        if not is_filename:
+            filename = filename.lower() + '_btree.bin'
+
         with open(index_base + filename, 'wb') as file:
             return file.write(picklerick.dumps(self))
 

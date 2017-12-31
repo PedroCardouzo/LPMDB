@@ -1,6 +1,6 @@
 # -*- coding: <UTF-8> -*-
 import pickle as picklerick
-from .main_storage import getMoviePositionByID, readNext
+import lib.main_storage as ms
 from ._globals import base, index_base
 
 
@@ -51,6 +51,13 @@ class PatriciaTrie:
         self.root = PTrieNode()
         self.root.value = 0
 
+    @staticmethod
+    def propagate_to_branches(node_list):
+        out = []
+        for node in node_list:
+                out += node.extract()
+        return out
+
     def _insert(self, string, value, node=None, start_ind=0):
         node = self.root if node is None else node
         for i in range(start_ind, len(string)):
@@ -97,34 +104,45 @@ class PatriciaTrie:
         return
 
     def insert(self, movie, position=None, db_filepath='lpmdb.bin', λ=lambda x: x.title):
-        position = getMoviePositionByID(db_filepath, movie.lpmdbID) if position is None else position
+        position = ms.getMoviePositionByID(db_filepath, movie.lpmdbID) if position is None else position
         self._insert(λ(movie), position)
 
-    def save(self, filepath):
+    def save(self, filepath, is_filepath=False):
+        """saves the patricia trie to the database. It assumes the filepath recieved is actually a field name and
+        saves the file with a special name derived from it. If is_filepath=True, it doesn't do that conversion"""
+        if not is_filepath:
+            filepath += '_ptrie.bin'
         with open(index_base+filepath, 'wb') as file:
             file.write(picklerick.dumps(self))
 
+    @classmethod
+    def load(cls, field, suffix=False):
+        """given a field, converts it to the equivalent filename and opens it"""
+        extra = '_suf' if suffix else ''
+        return cls.read(field+extra+'_ptrie.bin')
+
     @staticmethod
     def read(filepath):
-        with open(index_base+filepath, 'rb') as file:
-            return picklerick.loads(file.read())
-
+        try:
+            with open(index_base+filepath, 'rb') as file:
+                return picklerick.loads(file.read())
+        except FileNotFoundError:
+            return None
     @staticmethod
-    def create_patricia_trie(db_filename, pt_filename, λ=lambda mv: str.lower(mv.title)):
+    def create_patricia_trie(db_filename, λ=lambda mv: mv.title.lower()):
         pt = PatriciaTrie()
-        pt._createPatriciaTrie(db_filename, pt_filename, λ)
+        pt._createPatriciaTrie(db_filename, λ)
         return pt
 
-    def _createPatriciaTrie(self, db_filename, pt_filename, λ):
+    def _createPatriciaTrie(self, db_filename, λ):
         with open(base+db_filename, 'rb') as file:
             position = file.tell()
-            movie = readNext(file)
+            movie = ms.readNext(file)
             while movie is not None:
                 self.insert(movie, position, db_filename, λ)
                 position = file.tell()
-                movie = readNext(file)
+                movie = ms.readNext(file)
 
-        self.save(pt_filename)
 
     def print(self):
         self.root._print(0)
@@ -142,8 +160,8 @@ class PatriciaTrie:
     def prefixSearch(self, string):
         node = self.root
         for letter in string:
-            if node.hasNext:
-                node = node.next(letter)
+            if node is not None and node.hasNext:
+                node = node.ptrs[char_to_index(letter)]
             else:
                 break
         return [node]
@@ -171,6 +189,7 @@ class PatriciaTrie:
                         else:
                             out += self._infixSearch(infix, 0, _node)
                 return out
+
             elif infix in node.key:
                 return [node]
             else:
@@ -179,14 +198,6 @@ class PatriciaTrie:
 
     def infixSearch(self, infix):
         return self._infixSearch(infix, 0, self.root)
-
-    def genericSearch(self, string, search_function):
-        output = []
-        node_list = search_function(string)
-        for node in node_list:
-            output += node.extract()
-        return output
-
 
     def testFill(self, lista):
         x = 0

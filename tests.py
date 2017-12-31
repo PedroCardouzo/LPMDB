@@ -9,35 +9,37 @@
 #         print(a.title)
 #         a = ms.readNext(file)
 
-pt = PatriciaTrie.create_patricia_trie('lpmdb.bin', 'ptrie_title.bin')
-pt.save('ptrie_title.bin')
-del pt
-pt = PatriciaTrie.read('ptrie_title.bin')
-# pt.print()
-l = ["The Fifth Element",
-     "Liar Liar",
-     "The Lost World: Jurassic Park",
-     "Men in Black",
-     "The Fast and the Furious",
-     "Jurassic Park III",
-     "Ocean's Eleven",
-     "Shrek",
-     "8 Mile",
-     "The Bourne Identity",
-     "Harry Potter and the Chamber of Secrets",
-     "School of Rock",
-     "X-Men 2",
-     "Cheaper by the Dozen",
-     "Matrix Revolutions",
-     "Mystic River",
-     "The Bourne Supremacy",
-     "The Butterfly Effect",
-     "I, Robot",
-     "Kill Bill: Vol. 2"]
-for s in l:
-    print(pt.infixSearch(str.lower(s[1:-2]))[0].value)
-mv = ms.readMovieByPos('lpmdb.bin', 16896)
-print(mv.title)
+# pt = PatriciaTrie.create_patricia_trie('lpmdb.bin', 'title')
+    # pt.save('title')
+    # del pt
+    pt = PatriciaTrie.load('title')
+    # pt.print()
+    l = ["The Fifth Element",
+         "Liar Liar",
+         "The Lost World: Jurassic Park",
+         "Men in Black",
+         "The Fast and the Furious",
+         "Jurassic Park III",
+         "Ocean's Eleven",
+         "Shrek",
+         "8 Mile",
+         "The Bourne Identity",
+         "Harry Potter and the Chamber of Secrets",
+         "School of Rock",
+         "X-Men 2",
+         "Cheaper by the Dozen",
+         "Matrix Revolutions",
+         "Mystic River",
+         "The Bourne Supremacy",
+         "The Butterfly Effect",
+         "I, Robot",
+         "Kill Bill: Vol. 2"]
+    # for s in l:
+    #     print(pt.infixSearch(str.lower(s[1:-2]))[0].value)
+    # mv = ms.readMovieByPos('lpmdb.bin', 16896)
+    # print(mv.title)
+    mvs = PatriciaTrie.propagate_to_branches(pt.infixSearch('2'))
+    print(mvs)
 
 # reversed files tests:
 # delete all files and paste this in main ->
@@ -69,8 +71,10 @@ print(mv.title)
 #         print(a.title)
 #         a = ms.readNext(file)
 
-bt = BTree.createBTree(2, 'lpmdb.bin')
+bt = BTree.createBTree('lpmdb.bin', 2)
 bt.print()
+del bt
+bt = bt.load('averageRating')  # @ tochange
 res = bt.search(le, 65)
 print(res)
 for el in res:
@@ -78,3 +82,40 @@ for el in res:
      print(movie.title)
      print(movie.averageRating)
      print(movie.rating)
+
+# BTree in cmd
+     parser = Parser()
+
+     parser.parse(':: 65 > averageRating > 40 as dft')
+
+     # print(parser.names)
+     print([x.title for x in parser.names['dft']])
+
+# rf is working in cmd
+
+
+# piping filter is working in cmd
+    parser = Parser()
+
+    parser.parse(':: 65 > averageRating > 40 as dft | title jurassic ')
+
+    # print(parser.names)
+    print([x.title for x in parser.names['dft']])
+
+
+    # MULTIPLE FILTERS TOO!
+    parser = Parser()
+
+    parser.parse(':: 65 > averageRating > 40 as dft | title jurassic | released > 2000')  # RELEASED MAY CHANGE TO YEAR
+
+    # print(parser.names)
+    print([(x.title, x.released) for x in parser.names['dft']])
+
+# patricia tree parser IS OK TOO :D
+
+        parser = Parser()
+        #
+        parser.parse(':: from title match 2 | released > 2003 | title 2')
+
+        # print(parser.names)
+        print([(x.title, x.released) for x in parser.names['default']])
