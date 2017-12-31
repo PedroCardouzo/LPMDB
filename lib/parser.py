@@ -201,7 +201,7 @@ help=("\n"
                 print(self.parse_print(query))
 
             elif command == 'names':
-                print(self.names.keys())
+                print(list(self.names.keys()))
 
             elif command == "delete" or command == "del":
                 print_indexed(self.delete(query))
@@ -423,6 +423,7 @@ help=("\n"
     def parse_split(self, query):
         name, position = query.split(' @ ')
         name = 'default' if name == '' else name
+        position = int(position)
         self.names[name] = self.names[name][:position]
         return [x.title for x in self.names[name]]
 
