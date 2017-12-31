@@ -37,7 +37,7 @@ default=("\n"
          "            help print\n"
          "            help quickprint\n"
          "            help names\n"
-         "            help show\n"
+         "            help extract\n"
          "            help len\n"
          "            help delete\n"
          "            help split\n"
@@ -110,9 +110,9 @@ quickprint=("\n"
        "quickprint -> # print information\n"
        "    <name> <field> \n"
        "    # will print the desired <field> of every movie in the list pointed by <name>\n"),
-show=("\n"
-       "show -> # print selected fields\n"
-       "    show <fields> from <name>\n"
+extract=("\n"
+       "extract -> # print selected fields\n"
+       "    extract <fields> from <name>\n"
        "    # picks a name and shows the provided fields (separated by commas)\n"
        "    # title is always the first, where it provided or not\n"),
 len=("\n"
@@ -182,8 +182,8 @@ help=("\n"
             elif command == 'make':
                 print(self.parse_make(query))
 
-            elif command == 'show':
-                print(self.parse_show(query))
+            elif command == 'extract':
+                print(self.parse_extract(query))
 
             elif command == 'reverse':
                 print_indexed(self.parse_reverse(query))
@@ -216,7 +216,7 @@ help=("\n"
 
     def parse_help(self, query):
         if query == 'all':
-            keys = ['expressions', 'piping', 'filter', 'sort', 'make', 'print', 'show',
+            keys = ['expressions', 'piping', 'filter', 'sort', 'make', 'print', 'extract',
                     'len', 'names', 'delete', 'split', 'merge', 'rename', 'help']
             str_out = ''
             for key in keys:
@@ -303,21 +303,20 @@ help=("\n"
                     return content[key]
 
     def parse_ptrie(self, query):
-        field, _type, exp = [x for x in query.split(' ') if x != '']
-        suffix = exp[0] == '*' and exp[-1] != '*'
+        field, _type, exp = [x for x in query.split(' ', 2) if x != '']
+        suffix = False # exp[0] == '*' and exp[-1] != '*'
         start_on_border = exp[0] != '*' or suffix
 
-        ptrie = PatriciaTrie.load(field, suffix=suffix)
+        ptrie = PatriciaTrie.load(field)
 
         if ptrie is None:
             return None
         elif exp == '*':
             return [x[1] for x in PatriciaTrie.propagate_to_branches([ptrie.root])] # @ debug
-
-        if suffix:
-            exp = exp[::-1]  # invert expression to search in suffix tree from the last character up to the first
-
-        exp = exp.split('*')  # split at each '*'
+        #
+        # if suffix:
+        #     exp = exp[::-1]  # invert expression to search in suffix tree from the last character up to the first
+        exp = [x for x in exp.split('*') if x != '']  # split at each '*'
         exp_stack = exp[::-1]  # invert the order of the list so last of the list is first (it became a stack)
 
         if start_on_border and _type == 'fetch':
@@ -495,21 +494,21 @@ help=("\n"
         else:
             return '=='
 
-    def parse_show(self, query):
+    def parse_extract(self, query):
         query, name = query.split(' from ')
-        query.replace(' ', '')
+        query = query.replace(' ', '')
         query = query.split(',')
 
         if 'title' in query:
             query.remove('title')  # remove the title so that it can be printed first, outside the loop
         string = ''
         for movie in self.names[name]:
-            string += '\n' + movie.title
+            string += '\n\n' + movie.title
             for field in query:
                 try:
-                    string += '\n' + str(movie.__dict__[field]) + '\n'
+                    string += '\n' + str(movie.__dict__[field])
                 except KeyError:
-                    string += "\nfield '" + field + "' doesn't exist\n"
+                    string += "\nfield '" + field + "' doesn't exist"
         return string
     def parse_len(self, query):
         return len(self.names[query])
