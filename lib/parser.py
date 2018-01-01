@@ -43,7 +43,10 @@ class Parser:
                      "            help delete\n"
                      "            help split\n"
                      "            help merge\n"
+                     "            help &&\n"
+                     "            help !&\n"
                      "            help rename\n"
+                     "            help add\n"
                      "        *hint: start by search, then piping, then sort and filter\n"
                      "        *hint: use 'help all' to show all documentation\n"),
             search=("\n"
@@ -140,18 +143,37 @@ class Parser:
                     "rename -> #\n"
                     "    rename <old_name> as <new_name>\n"
                     "    # renames name <old_name> to <new_name>\n"),
+            add=("\n"
+                 "add -> #\n"
+                 "    add <imdbID>\n"
+                 "    # imdbID must be a valid IMDb webside movie ID. After inputting the id it will as you to input\n"
+                 "    # more information as main database file name and which indexing files exists for each data structure\n"),
             help=("\n"
                   "help -> # this\n"
                   "    help [<command>]\n"
                   "    # if used by itself provides the full documentation\n"
                   "    # if used with a command as argument returns the documentation of that command only\n")
         )
+        self.help['&&'] = ("\n"
+                           "&& -> #\n"
+                           "    <name> <| <name1> && <name2>\n"
+                           "    # saves in name a list with the elements in the lists pointed by both name1 and name2\n"),
+        self.help['!&'] = ("\n"
+                           "!& -> #\n"
+                           "    <name> <| <name1> !& <name2>\n"
+                           "    # saves in name a list with the elements in the list pointed by name1 and not by name2\n"),
+
+
+
 
     def parse(self, string):
         if string == 'exit':
             return False
         elif string == 'help':
             print(self.help['default'])
+            return True
+        elif '!&' in string or '&&' in string and not 'help' in string:
+            print_indexed(self.parse_plus_minus_intersection(string))
             return True
         else:
             try:
@@ -221,7 +243,7 @@ class Parser:
     def parse_help(self, query):
         if query == 'all':
             keys = ['search', 'piping', 'filter', 'sort', 'make', 'print', 'extract',
-                    'len', 'names', 'delete', 'split', 'merge', 'rename', 'help']
+                    'len', 'names', 'delete', 'split', 'merge', '&&', '!&', 'rename', 'add', 'help']
             str_out = ''
             for key in keys:
                 str_out += self.help[key]
@@ -235,6 +257,22 @@ class Parser:
 
     def quickprint(self, name, field):
         return [x.__dict__.get(field, None) for x in self.names.get(name, [None])]
+
+    def parse_plus_minus_intersection(self, query):
+        if '<|' in query:
+            name, query = query.split(' <| ')
+        else:
+            name = query.split(' ', 1)[0]
+
+        if '!' in query:
+            n1, n2 = query.split(' !& ')
+            id_list = list(set([x.lpmdb_id for x in self.names[n1]]) - set([x.lpmdb_id for x in self.names[n2]]))
+        else:
+            n1, n2 = query.split(' && ')
+            id_list = list(set([x.lpmdb_id for x in self.names[n1]]) & set([x.lpmdb_id for x in self.names[n2]]))
+
+        self.names[name] = [x for x in self.names[n1] if x.lpmdb_id in id_list]
+        return [x.title for x in self.names[name]]
 
     def parse_merge(self, query):
         accumulator_name, query = query.split(': ', 1)
