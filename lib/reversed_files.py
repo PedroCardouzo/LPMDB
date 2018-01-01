@@ -68,7 +68,7 @@ def read(filename, is_filename=False):
         with open(index_base+filename, 'rb') as file:
             return picklerick.loads(file.read())
     except FileNotFoundError:
-        print('file ' + filename + " doesn't exist")
+        print('reversed file ' + filename + " doesn't exist")
         return None
 
 

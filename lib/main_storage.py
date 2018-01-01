@@ -76,7 +76,7 @@ def getMoviePositionByID(filepath, id):
         # if found any equal it will sort by the second argument
         pos = bisect(index_table, (id, -1))
         value = index_table[pos]
-        del index_table
+
         if value.lpmdbID == id:
             return value.address
         else:
@@ -87,14 +87,14 @@ def getMoviePositionByID(filepath, id):
 def index_position(filepath, key, value, keep_open=False):
     """recieves a string and and 2 integers. Then it opens a file with that name, which is a indexing file.
     It inserts the key, value pair at the correct position so that it is still sorted by lpmdbID"""
-    table_value = id_index(key,value)
+    table_value = id_index(key, value)
 
     if type(filepath) is str:
         try:
-            file = open(filepath, 'rb+')
+            file = open(base+filepath, 'rb+')
         except FileNotFoundError:
-            open(filepath, 'wb').close()
-            file = open(filepath, 'rb+')
+            open(base+filepath, 'wb').close()
+            file = open(base+filepath, 'rb+')
     else:
         file = filepath
 
@@ -122,13 +122,14 @@ def json_to_lpmdb_bin(source_file, dest_file):
             writeAppend(file, Movie.load(d), keep_open=True)
 
 
-# writeAppend: (String || FILE*) Movie [Boolean FILE*] -> None
+# writeAppend: (String || FILE*) Movie [Boolean FILE*] -> Integer
 def writeAppend(filepath, movie_object, keep_open=False):
     """Recieves a string that is the path to the file (or the file itself) and an arbitrary object. It then opens the file as append binary,
     pickles the object to transform it into a bytes array. Then it uses file.tell() to get the position where the
     new object will be inserted and stores it in a variable 'pos'. It proceeds to store the length of the bytes
     array as a little endian integer and then writes the bytes array to the file. After that it saves the
-    value of 'pos' in a indexing file with the same filepath, but ending in '.lpmdb' using lpmdbID as keys."""
+    value of 'pos' in a indexing file with the same filepath, but ending in '.lpmdb' using lpmdbID as keys.
+    At the end returns the position where the movie is at the main DB file"""
     lpmdbID = movie_object.lpmdb_id
     if type(filepath) is str:
         file = open(base+filepath, 'ab')
@@ -140,7 +141,7 @@ def writeAppend(filepath, movie_object, keep_open=False):
 
     byte_array = picklerick.dumps(movie_object)
     pos = file.tell()
-    print('position @ ' + str(pos))
+    # print('position @ ' + str(pos))  # @ debug
     storeElementSize(file, byte_array)
     file.write(byte_array)
     
@@ -148,6 +149,8 @@ def writeAppend(filepath, movie_object, keep_open=False):
 
     if not keep_open:
         file.close()
+
+    return pos
 
 
 def dumpMultipleMovies(filepath, list_of_movies):

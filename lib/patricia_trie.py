@@ -75,6 +75,7 @@ class PatriciaTrie:
                     value2 = node.value
                     if string == string2:
                         print('register with key=' + string2 + ' already exists')
+                        return
                     else:
                         node.key, node.value = None, 0
                         j = 0

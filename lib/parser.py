@@ -2,10 +2,11 @@
 import lib.main_storage as ms
 from lib.movie import Movie
 from lib.patricia_trie import PatriciaTrie
-from lib.btree import BTree
+from lib.btree import BTree, BTreeNodeElement
 import lib.reversed_files as rf
 from operator import gt, ge, lt, le, eq, ne
 import lib._globals as _globals
+from lib.data_fetcher import http_get
 
 
 def print_indexed(iter):
@@ -24,127 +25,127 @@ class Parser:
         self.db_name = database_name
         self.func_dict = {'>': gt, '>=': ge, '<': lt, '<=': le, '=': eq, '==': eq, '!=': ne}
         self.help = dict(
-default=("\n"
-         "# whenever <field> is referred it means one of the Movie attributes\n"
-         "# whenever <name> is referred it means one of the local definitions from self.names>\n"
-         "# [<arg>] means that <arg> is optional (probably has a default value)\n"
-         "        help options:\n"
-         "            help expressions\n"
-         "            help piping\n"
-         "            help filter\n"
-         "            help sort\n"
-         "            help make\n"
-         "            help print\n"
-         "            help quickprint\n"
-         "            help names\n"
-         "            help extract\n"
-         "            help len\n"
-         "            help delete\n"
-         "            help split\n"
-         "            help merge\n"
-         "            help rename\n"
-         "        *hint: start by expressions, then piping, then sort and filter\n"
-         "        *hint: use 'help all' to show all documentation\n"),
-expressions=("\n"
-             "query or search or :: ->  # search functions\n"
-             "    # BTree search\n"
-             "        <field> <comparison_operator> <target_value> [as <name>]\n"
-             "        # example: average_rating > 70 -> returns a list with movies that average_rating is above 70\n"
-             "        # <comparison_operator>: supports >, >=, <, <=, != and == or =\n"
-             "        <target_value1> <comparison_operator1> <field> <comparison_operator2> <target_value2>\n"
-             "        # same as above but you may filter in a range\n"
-             "        # example: 80 > average_rating >= 60 -> should return a list with movies that average_rating is above 60 and below 70\n"
-             "\n"
-             "    # PATRICIA Trie search\n"
-             "        from <field> <alpha> <exp> [as <name>]\n"
-             "        # <alpha>: fetch -> does a prefix search, but accepts wildcards after first letter\n"
-             "                   match or filter -> does a implicit infix search and also accepts wildcards\n"
-             "        # <exp>: expression to search as 'abc * dd *f'\n"
-             "        # example: from title match 'harry * stone' -> should return harry potter and the philosopher stone\n"
-             "\n"
-             "    # Reversed File search:\n"
-             "        rf <field> <desired> [as <name>]\n"
-             "        # <desired> -> the desired field you want to fetch the movies from\n"),
-piping=("\n"
-        "# Piping -> <expression> | <filter_criteria1> | <filter_criteria2> ... | <filter_criteriaN>\n"
-        "    You may apply as much filtering criteria as you want over the original expression with\n"
-        "    piping each filter criteria must be as in the following structure\n"
-        "    <field> <string>  # filters out the movies which the string couldn't be matched inside the field\n"
-        "    # or\n"
-        "    <field> <comparison_operator> <target_value>  # filters out movies which the field value compared to the \n"
-        "    # target_value by that comparison_operator returned false\n"
-        "    # or\n"
-        "    sort <field>[ <reversed>]\n"
-        "    # if third argument is provided, will sort in decreasing order\n"),
-filter=("\n"
-        "filter -> # filtering functions\n"
-        "    # works pretty much like piping, but can be done after a search stored in names\n"
-        "    # <name> defaults to 'default'\n"
-        "\n"
-        "    filter[ <name>]: <field> <string>\n"
-        "    filter[ <name>]: <field> <comparison_operator> <target_value>\n"
-        "    # ex.: filter: title harry -> filters the 'default' list of movies to those who have harry in their titles\n"
-        "    # ex.: filter aa: title harry -> sabe thing but filters another variable called 'aa'\n"
-        "\n"
-        "    filter <name> <| <name2> <field> <string>\n"
-        "    filter <name> <| <name2> <field> <comparison_operator> <target_value>\n"
-        "    # same as above but now it filters <name2> and saves the result in <name>\n"),
-sort=("\n"
-      "sort -> # sorts stuff\n"
-      "    sort <name> <field> [<reversed>] \n"
-      "    # works exaclty the same as the ones used with piping but you also need to provide a\n"
-      "    # <name> so it knows that list to sort\n"
-      "    # doesn't makes sense to use it after a BTree query unless ordering for something else\n"),
-make=("\n"
-      "make -> # construction functions\n"
-      "   # make is used to construct BTree, PATRICIA Trie or a reversed file from a database bin file \n"
-      "   make btree <database_filename> [<field>]  # by default <field> value is average_rating\n"
-      "   make ptrie <database_filename> [<field>]  # by default <field> value is title\n"
-      "   make rf <database_filename> <field>       # no default values to field provided\n"),
-print=("\n"
-       "print -> # print information\n"
-       "    print <name> <i> -> prints the i-th element from the list pointed by name\n"
-       "    # or\n"
-       "    print <name> all -> prints all elements from the list pointed by name\n"),
-quickprint=("\n"
-       "quickprint -> # print information\n"
-       "    <name> <field> \n"
-       "    # will print the desired <field> of every movie in the list pointed by <name>\n"),
-extract=("\n"
-       "extract -> # print selected fields\n"
-       "    extract <fields> from <name>\n"
-       "    # picks a name and shows the provided fields (separated by commas)\n"
-       "    # title is always the first, where it provided or not\n"),
-len=("\n"
-     "len -> \n"
-     "    len <name> -> prints the size of the list pointed by name\n"),
-names=("\n"
-       "names ->\n"
-       "    names -> shows all the names that exists in the current execution\n"
-       "    you may print a certain field of all the elements in a list pointed by one name with the following:\n"
-       "    <name> <field>\n"),
-delete=("\n"
-       "delete or del -> #\n"
-       "    del <name> -> deletes a entry on the names dictionary\n"),
-split=("\n"
-       "split or slice -> #\n"
-       "    split <name> @ <position>\n"
-       "    # splits the list pointed by <name> @ <position> and overrides it\n"),
-merge=("\n"
-       "merge -> #\n"
-       "    merge <x>: <names>\n"
-       "    # merge the lists pointed by each of <names> into the list pointed by <x> (<x> can be a new name)\n"),
-rename=("\n"
-        "rename -> #\n"
-        "    rename <old_name> as <new_name>\n"
-        "    # renames name <old_name> to <new_name>\n"),
-help=("\n"
-      "help -> # this\n"
-      "    help [<command>]\n"
-      "    # if used by itself provides the full documentation\n"
-      "    # if used with a command as argument returns the documentation of that command only\n")
-)
-
+            default=("\n"
+                     "# whenever <field> is referred it means one of the Movie attributes\n"
+                     "# whenever <name> is referred it means one of the local definitions from self.names>\n"
+                     "# [<arg>] means that <arg> is optional (probably has a default value)\n"
+                     "        help options:\n"
+                     "            help search\n"
+                     "            help piping\n"
+                     "            help filter\n"
+                     "            help sort\n"
+                     "            help make\n"
+                     "            help print\n"
+                     "            help quickprint\n"
+                     "            help names\n"
+                     "            help extract\n"
+                     "            help len\n"
+                     "            help delete\n"
+                     "            help split\n"
+                     "            help merge\n"
+                     "            help rename\n"
+                     "        *hint: start by search, then piping, then sort and filter\n"
+                     "        *hint: use 'help all' to show all documentation\n"),
+            search=("\n"
+                    "query or search or :: ->  # search functions\n"
+                    "    # BTree search\n"
+                    "        <field> <comparison_operator> <target_value> [as <name>]\n"
+                    "        # example: average_rating > 70 -> returns a list with movies that average_rating is above 70\n"
+                    "        # <comparison_operator>: supports >, >=, <, <=, != and == or =\n"
+                    "        <target_value1> <comparison_operator1> <field> <comparison_operator2> <target_value2>\n"
+                    "        # same as above but you may filter in a range\n"
+                    "        # example: 80 > average_rating >= 60 -> should return a list with movies that average_rating is above 60 and below 70\n"
+                    "\n"
+                    "    # PATRICIA Trie search\n"
+                    "        from <field> <alpha> <exp> [as <name>]\n"
+                    "        # <alpha>: fetch -> does a prefix search, but accepts wildcards after first letter\n"
+                    "                   match or filter -> does a implicit infix search and also accepts wildcards\n"
+                    "        # <exp>: expression to search as 'abc * dd *f'\n"
+                    "        # example: from title match 'harry * stone' -> should return harry potter and the philosopher stone\n"
+                    "\n"
+                    "    # Reversed File search:\n"
+                    "        rf <field> <desired> [as <name>]\n"
+                    "        # <desired> -> the desired field you want to fetch the movies from\n"),
+            piping=("\n"
+                    "# Piping -> <expression> | <filter_criteria1> | <filter_criteria2> ... | <filter_criteriaN>\n"
+                    "    You may apply as much filtering criteria as you want over the original expression with\n"
+                    "    piping each filter criteria must be as in the following structure\n"
+                    "    [not] <field> <string>  # filters out the movies which the string couldn't be matched inside the field\n"
+                    "    # or\n"
+                    "    [not] <field> <comparison_operator> <target_value>  # filters out movies which the field value compared to the \n"
+                    "    if not is provided will return every element that doesn't classify\n"
+                    "    # target_value by that comparison_operator returned false\n"
+                    "    # or\n"
+                    "    sort <field>[ <reversed>]\n"
+                    "    # if third argument is provided, will sort in decreasing order\n"),
+            filter=("\n"
+                    "filter -> # filtering functions\n"
+                    "    # works pretty much like piping, but can be done after a search stored in names\n"
+                    "    # <name> defaults to 'default'\n"
+                    "\n"
+                    "    filter[ <name>]: [not] <field> <string>\n"
+                    "    filter[ <name>]: [not] <field> <comparison_operator> <target_value>\n"
+                    "    # ex.: filter: title harry -> filters the 'default' list of movies to those who have harry in their titles\n"
+                    "    # ex.: filter aa: title harry -> same thing but filters another variable called 'aa'\n"
+                    "\n"
+                    "    filter <name> <| <name2> <field> <string>\n"
+                    "    filter <name> <| <name2> <field> <comparison_operator> <target_value>\n"
+                    "    # same as above but now it filters <name2> and saves the result in <name>\n"),
+            sort=("\n"
+                  "sort -> # sorts stuff\n"
+                  "    sort <name> <field> [<reversed>] \n"
+                  "    # works exaclty the same as the ones used with piping but you also need to provide a\n"
+                  "    # <name> so it knows that list to sort\n"
+                  "    # doesn't makes sense to use it after a BTree query unless ordering for something else\n"),
+            make=("\n"
+                  "make -> # construction functions\n"
+                  "   # make is used to construct BTree, PATRICIA Trie or a reversed file from a database bin file \n"
+                  "   make btree <database_filename> [<field>]  # by default <field> value is average_rating\n"
+                  "   make ptrie <database_filename> [<field>]  # by default <field> value is title\n"
+                  "   make rf <database_filename> <field>       # no default values to field provided\n"),
+            print=("\n"
+                   "print -> # print information\n"
+                   "    print <name> <i> -> prints the i-th element from the list pointed by name\n"
+                   "    # or\n"
+                   "    print <name> all -> prints all elements from the list pointed by name\n"),
+            quickprint=("\n"
+                        "quickprint -> # print information\n"
+                        "    <name> <field> \n"
+                        "    # will print the desired <field> of every movie in the list pointed by <name>\n"),
+            extract=("\n"
+                     "extract -> # print selected fields\n"
+                     "    extract <fields> from <name>\n"
+                     "    # picks a name and shows the provided fields (separated by commas)\n"
+                     "    # title is always the first, where it provided or not\n"),
+            len=("\n"
+                 "len -> \n"
+                 "    len <name> -> prints the size of the list pointed by name\n"),
+            names=("\n"
+                   "names ->\n"
+                   "    names -> shows all the names that exists in the current execution\n"
+                   "    you may print a certain field of all the elements in a list pointed by one name with the following:\n"
+                   "    <name> <field>\n"),
+            delete=("\n"
+                    "delete or del -> #\n"
+                    "    del <name> -> deletes a entry on the names dictionary\n"),
+            split=("\n"
+                   "split or slice -> #\n"
+                   "    split <name> @ <position>\n"
+                   "    # splits the list pointed by <name> @ <position> and overrides it\n"),
+            merge=("\n"
+                   "merge -> #\n"
+                   "    merge <x>: <names>\n"
+                   "    # merge the lists pointed by each of <names> into the list pointed by <x> (<x> can be a new name)\n"),
+            rename=("\n"
+                    "rename -> #\n"
+                    "    rename <old_name> as <new_name>\n"
+                    "    # renames name <old_name> to <new_name>\n"),
+            help=("\n"
+                  "help -> # this\n"
+                  "    help [<command>]\n"
+                  "    # if used by itself provides the full documentation\n"
+                  "    # if used with a command as argument returns the documentation of that command only\n")
+        )
 
     def parse(self, string):
         if string == 'exit':
@@ -182,6 +183,9 @@ help=("\n"
             elif command == 'make':
                 print(self.parse_make(query))
 
+            elif command == 'add':
+                print(self.parse_add(query))
+
             elif command == 'extract':
                 print(self.parse_extract(query))
 
@@ -216,7 +220,7 @@ help=("\n"
 
     def parse_help(self, query):
         if query == 'all':
-            keys = ['expressions', 'piping', 'filter', 'sort', 'make', 'print', 'extract',
+            keys = ['search', 'piping', 'filter', 'sort', 'make', 'print', 'extract',
                     'len', 'names', 'delete', 'split', 'merge', 'rename', 'help']
             str_out = ''
             for key in keys:
@@ -224,7 +228,10 @@ help=("\n"
             return str_out
 
         else:
-            return self.help[query]
+            try:
+                return self.help[query]
+            except KeyError:
+                return "The key '" + query + "' doesn't exist. Type 'help' command for more"
 
     def quickprint(self, name, field):
         return [x.__dict__.get(field, None) for x in self.names.get(name, [None])]
@@ -258,9 +265,9 @@ help=("\n"
         return [x.title for x in self.names[name]]
 
     def parse_query(self, query):
-        apply_filter = '|' in query
+        apply_filter = ' | ' in query
         if apply_filter:
-            query = query.split('|')
+            query = query.split(' | ')
             query, filters_stack = query[0], query[:0:-1]  # reverse the second so that it can behave like a stack
 
         if ' as ' in query:
@@ -268,8 +275,9 @@ help=("\n"
         else:
             name = 'default'
 
-        name = name.replace(' ', '') # get rid of any extra ' '
+        name = name.replace(' ', '')  # get rid of any extra ' '
         cache = self.parse_expression(query)
+
         if cache is None:
             return
         else:
@@ -306,7 +314,7 @@ help=("\n"
 
     def parse_ptrie(self, query):
         field, _type, exp = [x for x in query.split(' ', 2) if x != '']
-        suffix = False # exp[0] == '*' and exp[-1] != '*'
+        suffix = False  # exp[0] == '*' and exp[-1] != '*'
         start_on_border = exp[0] != '*' or suffix
 
         ptrie = PatriciaTrie.load(field)
@@ -314,7 +322,7 @@ help=("\n"
         if ptrie is None:
             return None
         elif exp == '*':
-            return [x[1] for x in PatriciaTrie.propagate_to_branches([ptrie.root])] # @ debug
+            return [x[1] for x in PatriciaTrie.propagate_to_branches([ptrie.root])]  # @ debug
         #
         # if suffix:
         #     exp = exp[::-1]  # invert expression to search in suffix tree from the last character up to the first
@@ -388,8 +396,15 @@ help=("\n"
     def apply_filter_function(self, filter_exp, cache):
         filter_exp = [x for x in filter_exp.split(' ') if x != '']
 
+        if 'not' in filter_exp:
+            f = lambda x: not x
+            filter_exp.remove('not')
+        else:
+            f = lambda x: x
+
         if filter_exp[0] == 'sort':
-            reverse = len(filter_exp) == 3  # if len(filter_exp) == 3 it means that the query was 'sort' '<field>' 'reversed'
+            reverse = len(
+                filter_exp) == 3  # if len(filter_exp) == 3 it means that the query was 'sort' '<field>' 'reversed'
             field = filter_exp[1]
             cache.sort(key=lambda x: x.__dict__[field], reverse=reverse)
             return cache
@@ -397,11 +412,11 @@ help=("\n"
         elif len(filter_exp) == 3:
             field, comp_func, target_value = filter_exp
             comp_func = self.func_dict[comp_func]
-            return list(filter(lambda x: comp_func(int(x.__dict__[field]), int(target_value)), cache))
+            return list(filter(lambda x: f(comp_func(int(x.__dict__[field]), int(target_value))), cache))
 
         elif len(filter_exp) == 2:
             field, infix_search = filter_exp
-            return list(filter(lambda x: infix_search in x.__dict__[field].lower(), cache))
+            return list(filter(lambda x: f(infix_search in x.__dict__[field].lower()), cache))
 
     def parse_filter(self, query):
 
@@ -442,6 +457,34 @@ help=("\n"
             return self.makeReversedFile(query)
         else:
             return "ERROR: invalid argument for 'make' command -> " + command
+
+    def parse_add(self, imdbID):
+        print('Inform the database file name: ')
+        db_filename = input()
+        movie = Movie(http_get(imdbID))
+        pos = ms.writeAppend(db_filename, movie, keep_open=False)
+
+        print('Inform the B Tree indexing fields: ')
+        btree_fields = input().replace(' ', '').split(',')
+        for field in btree_fields:
+            node_element = BTreeNodeElement(movie.__dict__[field], pos, [])
+            bt = BTree.load(field)
+            bt.insert(node_element)
+            bt.save(field)
+
+        print('Inform the Patricia Trie indexing fields: ')
+        ptrie_fields = input().replace(' ', '').split(',')
+        for field in ptrie_fields:
+            pt = PatriciaTrie.load(field)
+            pt.insert(movie, position=pos, db_filepath=db_filename, λ=lambda x: x.__dict__[field].lower())
+            pt.save(field)
+
+        print('Inform the Reversed File indexing fields: ')
+        rf_fields = input().replace(' ', '').split(',')
+        for field in rf_fields:
+            rf.inc_reversed_file(db_filename, movie, field)
+
+        return movie.title + ' was added to the database'
 
     @staticmethod
     def makeBTree(query):
@@ -513,6 +556,7 @@ help=("\n"
                 except KeyError:
                     string += "\nfield '" + field + "' doesn't exist"
         return string
+
     def parse_len(self, query):
         return len(self.names[query])
 
@@ -521,7 +565,7 @@ help=("\n"
         name, index = query.split(' ')
         if index == 'all':
             out = ''
-            counter = (str(x) + ' ->\n' for x in range(1, len(self.names[name])+1))
+            counter = (str(x) + ' ->\n' for x in range(1, len(self.names[name]) + 1))
             for movie in self.names[name]:
                 out += next(counter) + movie.__str__() + '\n'
             return out
@@ -534,7 +578,6 @@ help=("\n"
             return "name '" + query + "' deleted"
         except NameError:
             return "name '" + query + "' was undefined"
-
 
     def validate(self, args):
         allowed_symbols = self.func_dict.keys()
