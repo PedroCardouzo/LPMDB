@@ -91,8 +91,8 @@ class Parser:
                     "    # ex.: filter: title harry -> filters the 'default' list of movies to those who have harry in their titles\n"
                     "    # ex.: filter aa: title harry -> same thing but filters another variable called 'aa'\n"
                     "\n"
-                    "    filter <name> <| <name2> <field> <string>\n"
-                    "    filter <name> <| <name2> <field> <comparison_operator> <target_value>\n"
+                    "    filter <name> <| <name2>: <field> <string>\n"
+                    "    filter <name> <| <name2>: <field> <comparison_operator> <target_value>\n"
                     "    # same as above but now it filters <name2> and saves the result in <name>\n"),
             sort=("\n"
                   "sort -> # sorts stuff\n"
@@ -156,12 +156,12 @@ class Parser:
         )
         self.help['&&'] = ("\n"
                            "&& -> #\n"
-                           "    <name> <| <name1> && <name2>\n"
-                           "    # saves in name a list with the elements in the lists pointed by both name1 and name2\n"),
+                           "    [<name> <|] <name1> && <name2>\n"
+                           "    # saves in name a list with the elements in the lists pointed by both name1 and name2\n")
         self.help['!&'] = ("\n"
                            "!& -> #\n"
-                           "    <name> <| <name1> !& <name2>\n"
-                           "    # saves in name a list with the elements in the list pointed by name1 and not by name2\n"),
+                           "    [<name> <|] <name1> !& <name2>\n"
+                           "    # saves in name a list with the elements in the list pointed by name1 and not by name2\n")
 
 
 
@@ -172,7 +172,7 @@ class Parser:
         elif string == 'help':
             print(self.help['default'])
             return True
-        elif '!&' in string or '&&' in string and not 'help' in string:
+        elif ('!&' in string or '&&' in string) and not 'help' in string:
             print_indexed(self.parse_plus_minus_intersection(string))
             return True
         else:
